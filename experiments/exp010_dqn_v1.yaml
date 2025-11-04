@@ -13,6 +13,7 @@ env:
   trading_fee: 0.001
   initial_balance: 10000
   reward_mode: "pnl"
+  max_steps: 5000
 
 agent:
   name: "dqn"

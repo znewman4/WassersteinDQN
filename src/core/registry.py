@@ -27,7 +27,7 @@ class Registry:
         return self._entries.copy()
 
 
-# Global registries
+# ✅ Global registries
 AGENTS = Registry("AGENTS")
 ENVS = Registry("ENVS")
 DATASETS = Registry("DATASETS")

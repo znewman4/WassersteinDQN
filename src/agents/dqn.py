@@ -1,3 +1,4 @@
+# src/agents/dqn.py
 import os
 import numpy as np
 import torch
@@ -7,6 +8,7 @@ from collections import deque
 import random
 from src.utils.logging import get_logger
 from src.core.registry import AGENTS
+
 
 class QNetwork(nn.Module):
     """Simple feedforward network for Q-value approximation."""
@@ -39,6 +41,7 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
+
 @AGENTS.register("dqn")
 class DQNAgent:
     """
@@ -49,15 +52,18 @@ class DQNAgent:
         self.logger = get_logger("DQNAgent")
         self.obs_dim = obs_dim
         self.action_dim = action_dim
+
+        # Core hyperparameters
         self.gamma = cfg.get("gamma", 0.99)
         self.epsilon = cfg.get("epsilon_start", 1.0)
         self.epsilon_end = cfg.get("epsilon_end", 0.05)
         self.epsilon_decay = cfg.get("epsilon_decay", 0.995)
         self.batch_size = cfg.get("batch_size", 64)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         hidden_sizes = cfg.get("network", {}).get("hidden_sizes", [128, 128])
-        self.q_net = QNetwork(obs_dim, action_dim, cfg["network"]["hidden_sizes"]).to(self.device)
-        self.target_net = QNetwork(obs_dim, action_dim, cfg["network"]["hidden_sizes"]).to(self.device)
+        self.q_net = QNetwork(obs_dim, action_dim, hidden_sizes).to(self.device)
+        self.target_net = QNetwork(obs_dim, action_dim, hidden_sizes).to(self.device)
         self.target_net.load_state_dict(self.q_net.state_dict())
 
         lr_value = float(cfg.get("lr", 1e-4))
@@ -89,7 +95,6 @@ class DQNAgent:
         s2 = torch.FloatTensor(s2).to(self.device)
         d = torch.FloatTensor(d).unsqueeze(1).to(self.device)
 
-        # Compute targets
         q_values = self.q_net(s).gather(1, a)
         with torch.no_grad():
             max_next_q = self.target_net(s2).max(1)[0].unsqueeze(1)
@@ -105,7 +110,6 @@ class DQNAgent:
         if self.step_count % self.target_update_interval == 0:
             self.target_net.load_state_dict(self.q_net.state_dict())
 
-        # Decay epsilon
         self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
         return float(loss.item())
 
@@ -124,6 +128,5 @@ class DQNAgent:
             self.target_net.load_state_dict(state["target_net"])
             self.epsilon = state.get("epsilon", 0.0)
         else:
-            # backward compatibility with older .pt files
             self.q_net.load_state_dict(state)
             self.target_net.load_state_dict(self.q_net.state_dict())

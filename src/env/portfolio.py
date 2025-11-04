@@ -79,7 +79,7 @@ class Portfolio:
                 self.cash -= (cost + fee)
                 self.trades.append((step, action, px, size))
 
-        elif action == -1:  # SELL
+        elif action == 2:  # SELL
             proceeds = px * size
             fee = proceeds * self.cfg.commission_pct
             new_pos = self.position - size
@@ -122,7 +122,7 @@ class Portfolio:
             "sharpe_term": float(sharpe_term),
             "drawdown_term": float(dd_term),
         }
-        return float(shaped * 100.0) # scale up for learning stability
+        return float(shaped * 10_000.0) # scale up for learning stability
 
     @property
     def last_reward_components(self):

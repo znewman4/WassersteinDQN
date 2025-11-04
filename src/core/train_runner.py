@@ -3,6 +3,8 @@ import os, numpy as np, torch
 from src.core.registry import AGENTS, ENVS, DATASETS
 from src.core.config import Config
 from src.evaluation.metrics import compute_pnl, compute_sharpe
+from src.env import trading_env
+from src.agents import dqn  
 
 def train_agent(cfg: Config):
     exp, env_cfg, agent_cfg = cfg.experiment, cfg.env, cfg.agent
@@ -35,7 +37,8 @@ def train_agent(cfg: Config):
 
     for step in range(1, total_timesteps + 1):
         action = agent.act(obs)
-        next_obs, reward, done, _, _ = env.step(action)
+        next_obs, reward, terminated, truncated, _ = env.step(action)
+        done = terminated or truncated
         agent.push(obs, action, reward, next_obs, done)
         agent.update()
         obs, ep_reward = next_obs, ep_reward + reward
@@ -46,6 +49,8 @@ def train_agent(cfg: Config):
             ep_reward = 0
 
         if step % eval_interval == 0:
+            info = env._info()
+            print(f"Step {step}: pos={info['position']}, equity={info['equity']:.2f}, reward={reward:.6f}")
             avg_r = np.mean(rewards[-10:]) if rewards else 0.0
             print(f"[Step {step}] AvgReward(10ep): {avg_r:.2f}")
             agent.save(ckpt_path)

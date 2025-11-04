@@ -52,10 +52,19 @@ class Config:
 
 
 def load_yaml_config(path: str) -> Config:
+    import os
+    path = os.path.abspath(path)
     with open(path, "r") as f:
         cfg_dict = yaml.safe_load(f)
+
+    agent_block = cfg_dict["agent"]
+    # Automatically pack everything except "name" into params
+    agent_name = agent_block.get("name")
+    agent_params = {k: v for k, v in agent_block.items() if k != "name"}
+
     return Config(
         experiment=ExperimentCfg(**cfg_dict["experiment"]),
         env=EnvCfg(**cfg_dict["env"]),
-        agent=AgentCfg(**cfg_dict["agent"]),
+        agent=AgentCfg(name=agent_name, params=agent_params),
     )
+
