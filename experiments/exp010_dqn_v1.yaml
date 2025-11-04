@@ -1,4 +1,3 @@
-
 experiment:
   name: "dqn_v1"
   seed: 42
@@ -8,15 +7,15 @@ experiment:
   eval_interval: 1000
 
 env:
-  module: "src.env.trading_env.TradingEnv"
+  name: "trading"
   data_path: "data/processed/btcusdt_with_wasserstein_signals.parquet"
-  window_size: 96        # number of bars in observation
-  trading_fee: 0.001     # 0.1%
+  window_size: 96
+  trading_fee: 0.001
   initial_balance: 10000
-  reward_mode: "pnl"     # or "log-return"
+  reward_mode: "pnl"
 
 agent:
-  module: "src.agents.dqn.DQNAgent"
+  name: "dqn"
   network:
     hidden_sizes: [128, 128]
     activation: "relu"
@@ -28,10 +27,6 @@ agent:
   epsilon_end: 0.05
   epsilon_decay: 0.995
   target_update_interval: 1000
-
-optimizer:
-  type: "adam"
-  lr: 1e-4
 
 logging:
   use_wandb: false

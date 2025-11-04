@@ -66,8 +66,7 @@ class TradingEnv(gym.Env):
             dtype=np.float32
         )
 
-
-
+        
         # state
         self.current_step: int = 0
 

@@ -1,3 +1,4 @@
+#scripts/run_dqn_backtest.py
 import os
 import torch
 import pandas as pd
@@ -54,7 +55,7 @@ def run_dqn_backtest(config_path: str):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, required=True)
+    parser.add_argument("--config", type=str, default="experiments/exp010_dqn_v1.yaml")
     args = parser.parse_args()
 
     run_dqn_backtest(args.config)

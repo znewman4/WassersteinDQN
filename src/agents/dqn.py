@@ -6,7 +6,7 @@ import torch.optim as optim
 from collections import deque
 import random
 from src.utils.logging import get_logger
-
+from src.core.registry import AGENTS
 
 class QNetwork(nn.Module):
     """Simple feedforward network for Q-value approximation."""
@@ -39,7 +39,7 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
-
+@AGENTS.register("dqn")
 class DQNAgent:
     """
     Deep Q-Network Agent.
@@ -55,7 +55,7 @@ class DQNAgent:
         self.epsilon_decay = cfg.get("epsilon_decay", 0.995)
         self.batch_size = cfg.get("batch_size", 64)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        hidden_sizes = cfg.get("network", {}).get("hidden_sizes", [128, 128])
         self.q_net = QNetwork(obs_dim, action_dim, cfg["network"]["hidden_sizes"]).to(self.device)
         self.target_net = QNetwork(obs_dim, action_dim, cfg["network"]["hidden_sizes"]).to(self.device)
         self.target_net.load_state_dict(self.q_net.state_dict())
@@ -111,8 +111,19 @@ class DQNAgent:
 
     def save(self, path):
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        torch.save(self.q_net.state_dict(), path)
+        torch.save({
+            "q_net": self.q_net.state_dict(),
+            "target_net": self.target_net.state_dict(),
+            "epsilon": self.epsilon,
+        }, path)
 
     def load(self, path):
-        self.q_net.load_state_dict(torch.load(path, map_location=self.device))
-        self.target_net.load_state_dict(self.q_net.state_dict())
+        state = torch.load(path, map_location=self.device)
+        if isinstance(state, dict) and "q_net" in state:
+            self.q_net.load_state_dict(state["q_net"])
+            self.target_net.load_state_dict(state["target_net"])
+            self.epsilon = state.get("epsilon", 0.0)
+        else:
+            # backward compatibility with older .pt files
+            self.q_net.load_state_dict(state)
+            self.target_net.load_state_dict(self.q_net.state_dict())
